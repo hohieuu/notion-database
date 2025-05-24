@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -13,7 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Terminal, ExternalLink } from 'lucide-react';
+import { Loader2, Terminal, ClipboardCopy } from 'lucide-react'; // Added ClipboardCopy, removed ExternalLink
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast"; // Added useToast
 
 const QueryResults: FC<{ results: any }> = ({ results }) => {
   if (!results) return null;
@@ -38,12 +41,11 @@ const QueryResults: FC<{ results: any }> = ({ results }) => {
   );
 };
 
-import { ScrollArea } from "@/components/ui/scroll-area";
-
 export const NotionQueryForm: FC = () => {
   const [constructedUrl, setConstructedUrl] = useState<string>("");
   const [queryResult, setQueryResult] = useState<any | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<QueryFormValues>({
     resolver: zodResolver(queryFormSchema),
@@ -52,17 +54,34 @@ export const NotionQueryForm: FC = () => {
       apiKey: "",
       queryParamsJson: "",
     },
+    mode: "onChange", // Useful for immediate feedback on URL construction
   });
 
   const databaseId = form.watch("databaseId");
+  const apiKey = form.watch("apiKey");
+  const queryParamsJson = form.watch("queryParamsJson");
 
   useEffect(() => {
-    if (databaseId) {
-      setConstructedUrl(`https://api.notion.com/v1/databases/${databaseId}/query`);
+    if (databaseId && apiKey) {
+      const baseUrl = window.location.origin; // Gets the base URL like http://localhost:3000
+      let url = `${baseUrl}/api/notion_database/${encodeURIComponent(databaseId)}?api_key=${encodeURIComponent(apiKey)}`;
+      
+      if (queryParamsJson && queryParamsJson.trim() !== "") {
+        try {
+          JSON.parse(queryParamsJson); // Validate if it's valid JSON
+          // Only append if valid and no error for queryParamsJson field
+          if (!form.formState.errors.queryParamsJson) {
+             url += `&filter=${encodeURIComponent(queryParamsJson)}`;
+          }
+        } catch (e) {
+          // Invalid JSON, form validation will show an error, so don't append filter.
+        }
+      }
+      setConstructedUrl(url);
     } else {
       setConstructedUrl("");
     }
-  }, [databaseId]);
+  }, [databaseId, apiKey, queryParamsJson, form.formState.errors.queryParamsJson]);
 
   const onSubmit = async (values: QueryFormValues) => {
     setQueryResult(null);
@@ -76,6 +95,26 @@ export const NotionQueryForm: FC = () => {
     } else {
       setQueryResult(result);
       setErrorMessage(null);
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    if (!constructedUrl) return;
+    try {
+      await navigator.clipboard.writeText(constructedUrl);
+      toast({
+        title: "Copied!",
+        description: "API Endpoint URL copied to clipboard.",
+        duration: 3000,
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy URL to clipboard.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      console.error("Failed to copy URL: ", err);
     }
   };
 
@@ -121,11 +160,11 @@ export const NotionQueryForm: FC = () => {
               name="queryParamsJson"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="queryParamsJson" className="text-base font-medium">Optional Query Parameters (JSON)</FormLabel>
+                  <FormLabel htmlFor="queryParamsJson" className="text-base font-medium">Optional Query Filter (JSON)</FormLabel>
                   <FormControl>
                     <Textarea
                       id="queryParamsJson"
-                      placeholder='{ "filter": { "property": "Status", "select": { "equals": "Done" } } }'
+                      placeholder='{ "property": "Status", "select": { "equals": "Done" } }'
                       {...field}
                       className="min-h-[120px] font-mono text-sm"
                     />
@@ -136,22 +175,26 @@ export const NotionQueryForm: FC = () => {
             />
             
             {constructedUrl && (
-              <div className="p-4 border rounded-md bg-muted/30">
-                <Label className="text-sm font-medium text-muted-foreground">API Endpoint URL (POST)</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <a 
-                    href={constructedUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-sm text-primary hover:underline break-all"
-                    aria-label="Open API endpoint URL in new tab"
-                  >
+              <div className="p-4 border rounded-md bg-muted/30 space-y-1">
+                <Label className="text-sm font-medium text-muted-foreground">Your API Endpoint (GET)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-primary break-all flex-grow">
                     {constructedUrl}
-                  </a>
-                  <ExternalLink className="h-4 w-4 text-primary shrink-0"/>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCopyUrl}
+                    className="h-7 w-7 shrink-0 p-1"
+                    aria-label="Copy API endpoint URL"
+                    disabled={!constructedUrl}
+                  >
+                    <ClipboardCopy className="h-4 w-4 text-primary" />
+                  </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Note: Query parameters are sent in the request body, not as URL parameters.
+                <p className="text-xs text-muted-foreground">
+                  Use this URL to directly query your Notion database via a GET request. The API key and filter are included as query parameters.
                 </p>
               </div>
             )}
@@ -163,7 +206,7 @@ export const NotionQueryForm: FC = () => {
                   Executing...
                 </>
               ) : (
-                "Execute Query"
+                "Execute Query via UI"
               )}
             </Button>
           </form>
@@ -183,3 +226,5 @@ export const NotionQueryForm: FC = () => {
     </Card>
   );
 };
+
+    
