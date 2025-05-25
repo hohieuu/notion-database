@@ -14,9 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Terminal, ClipboardCopy } from 'lucide-react'; // Added ClipboardCopy, removed ExternalLink
+import { Loader2, Terminal, ClipboardCopy } from 'lucide-react'; 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast"; // Added useToast
+import { useToast } from "@/hooks/use-toast"; 
 
 const QueryResults: FC<{ results: any }> = ({ results }) => {
   if (!results) return null;
@@ -51,30 +51,30 @@ export const NotionQueryForm: FC = () => {
     resolver: zodResolver(queryFormSchema),
     defaultValues: {
       databaseId: "",
-      apiKey: "",
+      apiKey: "", // Form field name remains apiKey
       queryParamsJson: "",
     },
-    mode: "onChange", // Useful for immediate feedback on URL construction
+    mode: "onChange", 
   });
 
   const databaseId = form.watch("databaseId");
-  const apiKey = form.watch("apiKey");
+  const apiKey = form.watch("apiKey"); // This is the value from the form field named 'apiKey'
   const queryParamsJson = form.watch("queryParamsJson");
 
   useEffect(() => {
     if (databaseId && apiKey) {
-      const baseUrl = window.location.origin; // Gets the base URL like http://localhost:3000
-      let url = `${baseUrl}/api/notion_database/${encodeURIComponent(databaseId)}?api_key=${encodeURIComponent(apiKey)}`;
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      // Changed 'api_key' to 'sak' in the constructed URL
+      let url = `${baseUrl}/api/notion_database/${encodeURIComponent(databaseId)}?sak=${encodeURIComponent(apiKey)}`; 
       
       if (queryParamsJson && queryParamsJson.trim() !== "") {
         try {
-          JSON.parse(queryParamsJson); // Validate if it's valid JSON
-          // Only append if valid and no error for queryParamsJson field
+          JSON.parse(queryParamsJson); 
           if (!form.formState.errors.queryParamsJson) {
              url += `&filter=${encodeURIComponent(queryParamsJson)}`;
           }
         } catch (e) {
-          // Invalid JSON, form validation will show an error, so don't append filter.
+          // Invalid JSON, form validation will show an error
         }
       }
       setConstructedUrl(url);
@@ -87,6 +87,7 @@ export const NotionQueryForm: FC = () => {
     setQueryResult(null);
     setErrorMessage(null);
     
+    // executeNotionQuery still expects an object with an 'apiKey' property
     const result = await executeNotionQuery(values);
 
     if (result.error) {
@@ -143,7 +144,7 @@ export const NotionQueryForm: FC = () => {
 
             <FormField
               control={form.control}
-              name="apiKey"
+              name="apiKey" // Form field name remains apiKey for react-hook-form
               render={({ field }) => (
                 <FormItem>
                   <FormLabel htmlFor="apiKey" className="text-base font-medium">Notion API Key</FormLabel>
@@ -164,7 +165,7 @@ export const NotionQueryForm: FC = () => {
                   <FormControl>
                     <Textarea
                       id="queryParamsJson"
-                      placeholder='{ "property": "Status", "select": { "equals": "Done" } }'
+                      placeholder='{ "filter": { "property": "Status", "select": { "equals": "Done" } } }'
                       {...field}
                       className="min-h-[120px] font-mono text-sm"
                     />
@@ -194,7 +195,7 @@ export const NotionQueryForm: FC = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Use this URL to directly query your Notion database via a GET request. The API key and filter are included as query parameters.
+                  Use this URL to directly query your Notion database via a GET request. The API key (as 'sak') and filter are included as query parameters.
                 </p>
               </div>
             )}
@@ -226,5 +227,3 @@ export const NotionQueryForm: FC = () => {
     </Card>
   );
 };
-
-    
