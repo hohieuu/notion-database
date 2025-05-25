@@ -11,9 +11,10 @@ interface ExecuteQueryArgs {
 
 export async function executeNotionQuery(args: ExecuteQueryArgs): Promise<any> {
   const { databaseId, apiKey, queryParamsJson } = args;
+  const attemptedAt = new Date().toISOString(); // Timestamp of the query attempt
 
   if (!databaseId || !apiKey) {
-    return { error: "Database ID and API Key are required." };
+    return { error: "Database ID and API Key are required.", dataFetchedAt: attemptedAt };
   }
 
   let queryBody: QueryParams = {};
@@ -21,7 +22,7 @@ export async function executeNotionQuery(args: ExecuteQueryArgs): Promise<any> {
     try {
       queryBody = JSON.parse(queryParamsJson);
     } catch (e) {
-      return { error: "Invalid JSON in query parameters." };
+      return { error: "Invalid JSON in query parameters.", dataFetchedAt: attemptedAt };
     }
   }
 
@@ -44,16 +45,25 @@ export async function executeNotionQuery(args: ExecuteQueryArgs): Promise<any> {
     if (!response.ok) {
       return { 
         error: responseData.message || `API Error: ${response.status}`,
-        details: responseData 
+        details: responseData,
+        dataFetchedAt: attemptedAt
       };
     }
 
-    return responseData;
+    return {
+      ...responseData,
+      dataFetchedAt: attemptedAt, // Use the same timestamp for successful fetch
+    };
   } catch (error) {
     console.error("Notion API request failed:", error);
+    const errorResponse: any = {
+      dataFetchedAt: attemptedAt, // Timestamp of the attempt
+    };
     if (error instanceof Error) {
-      return { error: `Network or server error: ${error.message}` };
+      errorResponse.error = `Network or server error: ${error.message}`;
+    } else {
+      errorResponse.error = "An unknown error occurred while querying Notion API.";
     }
-    return { error: "An unknown error occurred while querying Notion API." };
+    return errorResponse;
   }
 }
