@@ -2,7 +2,7 @@
 import { NotionQueryForm } from '@/components/notion-query-form';
 import { Toaster } from "@/components/ui/toaster";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -112,10 +112,13 @@ export default function Home() {
         </section>
       </main>
       <Toaster />
-      <footer className="py-8 text-center text-muted-foreground text-sm">
-        Powered by Next.js and Notion API
+      <footer className="py-8 text-center text-muted-foreground text-sm space-y-2">
+        <p className="flex items-center justify-center gap-1.5">
+            <ShieldCheck size={14} className="text-green-600" />
+            Your API key is sent directly to Notion and is not stored by this tool. All connections are secure.
+        </p>
+        <p>Powered by Next.js and Notion API</p>
       </footer>
     </div>
   );
 }
-
