@@ -64,8 +64,8 @@ export const NotionQueryForm: FC = () => {
   useEffect(() => {
     if (databaseId && apiKey) {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      // Changed 'api_key' to 'sak' in the constructed URL
-      let url = `${baseUrl}/api/notion_database/${encodeURIComponent(databaseId)}?sak=${encodeURIComponent(apiKey)}`; 
+      // Changed path to /api/ndb/
+      let url = `${baseUrl}/api/ndb/${encodeURIComponent(databaseId)}?sak=${encodeURIComponent(apiKey)}`; 
       
       if (queryParamsJson && queryParamsJson.trim() !== "") {
         try {
