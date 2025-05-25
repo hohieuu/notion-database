@@ -1,3 +1,4 @@
+
 "use server";
 
 type QueryParams = Record<string, any>;
@@ -35,6 +36,7 @@ export async function executeNotionQuery(args: ExecuteQueryArgs): Promise<any> {
         "Notion-Version": "2022-06-28",
       },
       body: Object.keys(queryBody).length > 0 ? JSON.stringify(queryBody) : "{}",
+      cache: 'no-store', // Explicitly prevent caching for this fetch call
     });
 
     const responseData = await response.json();
