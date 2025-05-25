@@ -14,9 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Terminal, ClipboardCopy } from 'lucide-react'; 
+import { Loader2, Terminal, ClipboardCopy, Eye, Table2, ExternalLink } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast"; 
+import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
 
 const QueryResults: FC<{ results: any }> = ({ results }) => {
   if (!results) return null;
@@ -28,7 +29,7 @@ const QueryResults: FC<{ results: any }> = ({ results }) => {
           <Terminal className="h-6 w-6 text-primary" />
           Query Results
         </CardTitle>
-        <CardDescription>Results from the Notion API query.</CardDescription>
+        <CardDescription>Results from the Notion API query (executed via UI button).</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[300px] w-full rounded-md border p-4 bg-secondary/30">
@@ -42,7 +43,9 @@ const QueryResults: FC<{ results: any }> = ({ results }) => {
 };
 
 export const NotionQueryForm: FC = () => {
-  const [constructedUrl, setConstructedUrl] = useState<string>("");
+  const [constructedApiUrl, setConstructedApiUrl] = useState<string>("");
+  const [constructedViewUrl, setConstructedViewUrl] = useState<string>("");
+  const [constructedTableViewUrl, setConstructedTableViewUrl] = useState<string>("");
   const [queryResult, setQueryResult] = useState<any | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -51,35 +54,41 @@ export const NotionQueryForm: FC = () => {
     resolver: zodResolver(queryFormSchema),
     defaultValues: {
       databaseId: "",
-      apiKey: "", // Form field name remains apiKey
+      apiKey: "",
       queryParamsJson: "",
     },
-    mode: "onChange", 
+    mode: "onChange",
   });
 
   const databaseId = form.watch("databaseId");
-  const apiKey = form.watch("apiKey"); // This is the value from the form field named 'apiKey'
+  const apiKey = form.watch("apiKey");
   const queryParamsJson = form.watch("queryParamsJson");
 
   useEffect(() => {
-    if (databaseId && apiKey) {
+    const canConstructUrls = databaseId && apiKey && (!form.formState.errors.queryParamsJson || !queryParamsJson || queryParamsJson.trim() === "");
+    
+    if (canConstructUrls) {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      // Changed path to /api/ndb/
-      let url = `${baseUrl}/api/ndb/${encodeURIComponent(databaseId)}?sak=${encodeURIComponent(apiKey)}`; 
+      const encodedDbId = encodeURIComponent(databaseId);
+      const encodedApiKey = encodeURIComponent(apiKey);
       
-      if (queryParamsJson && queryParamsJson.trim() !== "") {
-        try {
-          JSON.parse(queryParamsJson); 
-          if (!form.formState.errors.queryParamsJson) {
-             url += `&filter=${encodeURIComponent(queryParamsJson)}`;
-          }
+      let queryString = `?sak=${encodedApiKey}`;
+      if (queryParamsJson && queryParamsJson.trim() !== "" && !form.formState.errors.queryParamsJson) {
+         try {
+          JSON.parse(queryParamsJson); // Final check for valid JSON before appending
+          queryString += `&filter=${encodeURIComponent(queryParamsJson)}`;
         } catch (e) {
-          // Invalid JSON, form validation will show an error
+          // If JSON is invalid at this stage, do not append filter; form validation will handle error display
         }
       }
-      setConstructedUrl(url);
+
+      setConstructedApiUrl(`${baseUrl}/api/ndb/${encodedDbId}${queryString}`);
+      setConstructedViewUrl(`${baseUrl}/view/ndb/${encodedDbId}${queryString}`);
+      setConstructedTableViewUrl(`${baseUrl}/table-view/ndb/${encodedDbId}${queryString}`);
     } else {
-      setConstructedUrl("");
+      setConstructedApiUrl("");
+      setConstructedViewUrl("");
+      setConstructedTableViewUrl("");
     }
   }, [databaseId, apiKey, queryParamsJson, form.formState.errors.queryParamsJson]);
 
@@ -87,11 +96,10 @@ export const NotionQueryForm: FC = () => {
     setQueryResult(null);
     setErrorMessage(null);
     
-    // executeNotionQuery still expects an object with an 'apiKey' property
     const result = await executeNotionQuery(values);
 
     if (result.error) {
-      setErrorMessage(result.error + (result.details ? `: ${JSON.stringify(result.details.code)} - ${JSON.stringify(result.details.message)}` : ''));
+      setErrorMessage(result.error + (result.details ? `: ${typeof result.details.code === 'string' ? result.details.code : JSON.stringify(result.details.code)} - ${typeof result.details.message === 'string' ? result.details.message : JSON.stringify(result.details.message)}` : ''));
       setQueryResult(null);
     } else {
       setQueryResult(result);
@@ -99,23 +107,23 @@ export const NotionQueryForm: FC = () => {
     }
   };
 
-  const handleCopyUrl = async () => {
-    if (!constructedUrl) return;
+  const handleCopyUrl = async (urlToCopy: string, linkName: string) => {
+    if (!urlToCopy) return;
     try {
-      await navigator.clipboard.writeText(constructedUrl);
+      await navigator.clipboard.writeText(urlToCopy);
       toast({
         title: "Copied!",
-        description: "API Endpoint URL copied to clipboard.",
+        description: `${linkName} URL copied to clipboard.`,
         duration: 3000,
       });
     } catch (err) {
       toast({
         title: "Failed to copy",
-        description: "Could not copy URL to clipboard.",
+        description: `Could not copy ${linkName} URL.`,
         variant: "destructive",
         duration: 3000,
       });
-      console.error("Failed to copy URL: ", err);
+      console.error(`Failed to copy ${linkName} URL: `, err);
     }
   };
 
@@ -123,7 +131,7 @@ export const NotionQueryForm: FC = () => {
     <Card className="w-full shadow-xl overflow-hidden rounded-xl">
       <CardHeader className="bg-muted/50 p-6">
         <CardTitle className="text-2xl font-semibold text-primary">Query Configuration</CardTitle>
-        <CardDescription>Enter your Notion database details and API key.</CardDescription>
+        <CardDescription>Enter your Notion database details and API key. Then, execute the query or use the generated links.</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
         <Form {...form}>
@@ -144,10 +152,10 @@ export const NotionQueryForm: FC = () => {
 
             <FormField
               control={form.control}
-              name="apiKey" // Form field name remains apiKey for react-hook-form
+              name="apiKey"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="apiKey" className="text-base font-medium">Notion API Key</FormLabel>
+                  <FormLabel htmlFor="apiKey" className="text-base font-medium">Notion API Key (Integration Token)</FormLabel>
                   <FormControl>
                     <Input id="apiKey" type="password" placeholder="secret_XXXXXXXXXXXX" {...field} className="text-base"/>
                   </FormControl>
@@ -175,39 +183,98 @@ export const NotionQueryForm: FC = () => {
               )}
             />
             
-            {constructedUrl && (
-              <div className="p-4 border rounded-md bg-muted/30 space-y-1">
-                <Label className="text-sm font-medium text-muted-foreground">Your API Endpoint (GET)</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-primary break-all flex-grow">
-                    {constructedUrl}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCopyUrl}
-                    className="h-7 w-7 shrink-0 p-1"
-                    aria-label="Copy API endpoint URL"
-                    disabled={!constructedUrl}
-                  >
-                    <ClipboardCopy className="h-4 w-4 text-primary" />
-                  </Button>
+            <div className="space-y-4">
+              {constructedApiUrl && (
+                <div className="p-4 border rounded-md bg-muted/30 space-y-1">
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Terminal className="h-4 w-4" /> Your API Endpoint (GET)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-primary break-all flex-grow">
+                      {constructedApiUrl}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopyUrl(constructedApiUrl, "API Endpoint")}
+                      className="h-7 w-7 shrink-0 p-1"
+                      aria-label="Copy API endpoint URL"
+                      disabled={!constructedApiUrl}
+                    >
+                      <ClipboardCopy className="h-4 w-4 text-primary" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use this URL to directly query your Notion database. The API key (as 'sak') and filter are included as query parameters.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Use this URL to directly query your Notion database via a GET request. The API key (as 'sak') and filter are included as query parameters.
-                </p>
-              </div>
-            )}
+              )}
 
-            <Button type="submit" disabled={form.formState.isSubmitting} className="w-full text-lg py-6 shadow-md hover:shadow-lg transform hover:scale-105">
+              {constructedViewUrl && (
+                <div className="p-4 border rounded-md bg-muted/30 space-y-1">
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                     <Eye className="h-4 w-4" /> View Raw JSON Data (UI)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Link href={constructedViewUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary break-all flex-grow hover:underline inline-flex items-center gap-1">
+                      {constructedViewUrl} <ExternalLink size={12}/>
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopyUrl(constructedViewUrl, "Raw JSON View")}
+                      className="h-7 w-7 shrink-0 p-1"
+                      aria-label="Copy Raw JSON view URL"
+                      disabled={!constructedViewUrl}
+                    >
+                      <ClipboardCopy className="h-4 w-4 text-primary" />
+                    </Button>
+                  </div>
+                   <p className="text-xs text-muted-foreground">
+                    Open this link in a new tab to view the raw JSON response on a simple page.
+                  </p>
+                </div>
+              )}
+
+              {constructedTableViewUrl && (
+                <div className="p-4 border rounded-md bg-muted/30 space-y-1">
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Table2 className="h-4 w-4" /> View Data as Table (UI)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                     <Link href={constructedTableViewUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary break-all flex-grow hover:underline inline-flex items-center gap-1">
+                       {constructedTableViewUrl} <ExternalLink size={12}/>
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopyUrl(constructedTableViewUrl, "Table View")}
+                      className="h-7 w-7 shrink-0 p-1"
+                      aria-label="Copy Table view URL"
+                      disabled={!constructedTableViewUrl}
+                    >
+                      <ClipboardCopy className="h-4 w-4 text-primary" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Open this link in a new tab to view the data in a structured table format.
+                  </p>
+                </div>
+              )}
+            </div>
+
+
+            <Button type="submit" disabled={form.formState.isSubmitting || !(databaseId && apiKey)} className="w-full text-lg py-6 shadow-md hover:shadow-lg transform transition-colors duration-200 hover:scale-[1.02] active:scale-[0.98]">
               {form.formState.isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Executing...
+                  Executing Query...
                 </>
               ) : (
-                "Execute Query via UI"
+                "Execute Query & View Results Below"
               )}
             </Button>
           </form>
@@ -217,7 +284,7 @@ export const NotionQueryForm: FC = () => {
       {errorMessage && (
          <CardFooter className="p-6 border-t border-destructive/20 bg-destructive/10">
             <Alert variant="destructive" className="w-full">
-              <AlertTitle className="font-semibold">Error</AlertTitle>
+              <AlertTitle className="font-semibold">Error Executing Query</AlertTitle>
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
         </CardFooter>
@@ -227,3 +294,4 @@ export const NotionQueryForm: FC = () => {
     </Card>
   );
 };
+
