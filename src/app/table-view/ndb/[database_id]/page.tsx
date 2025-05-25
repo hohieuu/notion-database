@@ -196,8 +196,8 @@ const TableViewNotionDatabasePage: NextPage<TableViewNotionDatabasePageProps> = 
   let rows: any[] = [];
   let numRows = 0;
   let numCols = 0;
+  
   let formattedTimestamp = 'N/A';
-
   if (result.dataFetchedAt) {
     try {
       formattedTimestamp = new Date(result.dataFetchedAt).toLocaleString(undefined, {
@@ -205,6 +205,7 @@ const TableViewNotionDatabasePage: NextPage<TableViewNotionDatabasePageProps> = 
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
     } catch (e) {
+      console.error("Error formatting timestamp in TableViewNotionDatabasePage:", e);
       formattedTimestamp = 'Invalid Date';
     }
   }
@@ -300,4 +301,6 @@ export default TableViewNotionDatabasePage;
 // Force dynamic rendering and prevent caching
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+    
+
     
