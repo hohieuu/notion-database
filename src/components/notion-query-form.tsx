@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Terminal, ClipboardCopy, Eye, Table2 as TableIcon, ExternalLink } from 'lucide-react'; // Renamed Table2 to TableIcon
+import { Loader2, Terminal, ClipboardCopy, Eye, Table2 as TableIcon, ExternalLink, HelpCircle } from 'lucide-react'; // Added HelpCircle
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
@@ -42,8 +42,8 @@ const getNotionPropertyValue = (property: any, propertyName?: string): React.Rea
     case 'select':
       return property.select ? <Badge variant="outline">{property.select.name}</Badge> : '';
     case 'multi_select':
-      return property.multi_select?.length > 0 
-        ? property.multi_select.map((s: any) => <Badge key={s.id || s.name} variant="outline" className="mr-1 mb-1">{s.name}</Badge>) 
+      return property.multi_select?.length > 0
+        ? property.multi_select.map((s: any) => <Badge key={s.id || s.name} variant="outline" className="mr-1 mb-1">{s.name}</Badge>)
         : '';
     case 'status':
       return property.status ? <Badge style={{ backgroundColor: notionColorToHex(property.status.color), color:getTextColorForBackground(notionColorToHex(property.status.color))}}>{property.status.name}</Badge> : '';
@@ -102,7 +102,7 @@ const getNotionPropertyValue = (property: any, propertyName?: string): React.Rea
         const formulaType = property.formula.type;
         const formulaValue = property.formula[formulaType];
         if (formulaValue !== null && formulaValue !== undefined) {
-           if (formulaType === 'date' && formulaValue.start) { 
+           if (formulaType === 'date' && formulaValue.start) {
                  return new Date(formulaValue.start).toLocaleDateString() + (formulaValue.end ? ' - ' + new Date(formulaValue.end).toLocaleDateString() : '');
             }
           return formulaValue.toString();
@@ -173,7 +173,7 @@ const QueryResults: FC<{ results: any }> = ({ results }) => {
       </Card>
     );
   }
-  
+
   let columnHeaders: string[] = [];
   if (dataRows.length > 0 && dataRows[0].properties) {
     const allPropertyKeys = new Set<string>();
@@ -250,16 +250,16 @@ export const NotionQueryForm: FC = () => {
 
   useEffect(() => {
     const canConstructUrls = databaseId && apiKey && (!form.formState.errors.queryParamsJson || !queryParamsJson || queryParamsJson.trim() === "");
-    
+
     if (canConstructUrls) {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       const encodedDbId = encodeURIComponent(databaseId);
       const encodedApiKey = encodeURIComponent(apiKey);
-      
+
       let queryString = `?sak=${encodedApiKey}`;
       if (queryParamsJson && queryParamsJson.trim() !== "" && !form.formState.errors.queryParamsJson) {
          try {
-          JSON.parse(queryParamsJson); 
+          JSON.parse(queryParamsJson);
           queryString += `&filter=${encodeURIComponent(queryParamsJson)}`;
         } catch (e) {
           // Invalid JSON, don't append filter. Error message will be shown by form validation.
@@ -279,7 +279,7 @@ export const NotionQueryForm: FC = () => {
   const onSubmit = async (values: QueryFormValues) => {
     setQueryResult(null);
     setErrorMessage(null);
-    
+
     const result = await executeNotionQuery(values);
 
     if (result.error) {
@@ -320,10 +320,27 @@ export const NotionQueryForm: FC = () => {
     }
   };
 
+  const loadExampleData = () => {
+    form.setValue("databaseId", "1fe8a3aa876380149f4cdd56781383a7", { shouldValidate: true });
+    form.setValue("apiKey", "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", { shouldValidate: true });
+    form.setValue("queryParamsJson", "{}", { shouldValidate: true });
+    toast({
+      title: "Example Data Loaded",
+      description: "Form fields have been populated with example values.",
+      duration: 3000,
+    });
+  };
+
   return (
     <Card className="w-full shadow-xl overflow-hidden rounded-xl">
       <CardHeader className="bg-muted/50 p-6">
-        <CardTitle className="text-2xl font-semibold text-primary">Query Configuration</CardTitle>
+        <div className="flex justify-between items-center">
+            <CardTitle className="text-2xl font-semibold text-primary">Query Configuration</CardTitle>
+            <Button variant="outline" size="sm" onClick={loadExampleData} className="flex items-center gap-1.5">
+                <HelpCircle size={16} />
+                Load Example Data
+            </Button>
+        </div>
         <CardDescription>Enter your Notion database details and API key. Then, execute the query or use the generated links.</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
@@ -375,7 +392,7 @@ export const NotionQueryForm: FC = () => {
                 </FormItem>
               )}
             />
-            
+
             <div className="space-y-4">
               {constructedApiUrl && (
                 <div className="p-4 border rounded-md bg-muted/30 space-y-1">
@@ -473,7 +490,7 @@ export const NotionQueryForm: FC = () => {
           </form>
         </Form>
       </CardContent>
-      
+
       {errorMessage && (
          <CardFooter className="p-6 border-t border-destructive/20 bg-destructive/10">
             <Alert variant="destructive" className="w-full">
@@ -487,3 +504,6 @@ export const NotionQueryForm: FC = () => {
     </Card>
   );
 };
+
+
+    
