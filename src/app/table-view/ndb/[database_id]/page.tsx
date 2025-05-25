@@ -196,6 +196,18 @@ const TableViewNotionDatabasePage: NextPage<TableViewNotionDatabasePageProps> = 
   let rows: any[] = [];
   let numRows = 0;
   let numCols = 0;
+  let formattedTimestamp = 'N/A';
+
+  if (result.dataFetchedAt) {
+    try {
+      formattedTimestamp = new Date(result.dataFetchedAt).toLocaleString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    } catch (e) {
+      formattedTimestamp = 'Invalid Date';
+    }
+  }
 
   if (result.error) {
     content = (
@@ -269,6 +281,11 @@ const TableViewNotionDatabasePage: NextPage<TableViewNotionDatabasePageProps> = 
             Viewing data for Database ID: <code className="bg-muted px-1 py-0.5 rounded text-sm">{databaseId}</code>.
             {filterJson && <span className="block mt-1 text-xs">Applied filter: <code className="bg-muted px-1 py-0.5 rounded">{filterJson}</code></span>}
           </CardDescription>
+          {formattedTimestamp !== 'N/A' && formattedTimestamp !== 'Invalid Date' && (
+            <p className="text-xs text-muted-foreground pt-2">
+              Data last refreshed: {formattedTimestamp}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {content}
@@ -283,5 +300,4 @@ export default TableViewNotionDatabasePage;
 // Force dynamic rendering and prevent caching
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
     
