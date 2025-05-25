@@ -201,13 +201,14 @@ const TableViewNotionDatabasePage: NextPage<TableViewNotionDatabasePageProps> = 
   if (result.dataFetchedAt) {
     try {
       const date = new Date(result.dataFetchedAt);
-      // Format the timestamp to UTC and append "UTC"
+      // Format the timestamp to Ho Chi Minh City timezone (GMT+7) and include offset
       formattedTimestamp = date.toLocaleString(undefined, { // Use 'undefined' for user's locale conventions for date/month order
         year: 'numeric', month: 'short', day: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
-        timeZone: 'UTC', // Specify UTC
-        hour12: true // Use 12-hour format (e.g., AM/PM) - adjust as needed
-      }) + ' UTC';
+        timeZone: 'Asia/Ho_Chi_Minh', // Specify Ho Chi Minh timezone
+        hour12: true, // Use 12-hour format (e.g., AM/PM) - adjust as needed
+        timeZoneName: 'shortOffset' // This aims to add 'GMT+7'
+      });
     } catch (e) {
       console.error("Error formatting timestamp in TableViewNotionDatabasePage:", e);
       formattedTimestamp = 'Invalid Date';
