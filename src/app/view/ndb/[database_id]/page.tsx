@@ -3,7 +3,7 @@ import type { NextPage } from 'next';
 import { executeNotionQuery } from '@/app/actions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// ScrollArea import removed as it's no longer used
 
 interface ViewNotionDatabasePageProps {
   params: { database_id: string };
@@ -59,11 +59,11 @@ const ViewNotionDatabasePage: NextPage<ViewNotionDatabasePageProps> = async ({ p
     );
   } else {
     content = (
-      <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border bg-gray-50 p-4">
+      <div className="w-full rounded-md border bg-secondary/30 p-4 overflow-x-auto">
         <pre className="text-sm whitespace-pre-wrap break-all">
           {JSON.stringify(result, null, 2)}
         </pre>
-      </ScrollArea>
+      </div>
     );
   }
 
