@@ -200,10 +200,14 @@ const TableViewNotionDatabasePage: NextPage<TableViewNotionDatabasePageProps> = 
   let formattedTimestamp = 'N/A';
   if (result.dataFetchedAt) {
     try {
-      formattedTimestamp = new Date(result.dataFetchedAt).toLocaleString(undefined, {
+      const date = new Date(result.dataFetchedAt);
+      // Format the timestamp to UTC and append "UTC"
+      formattedTimestamp = date.toLocaleString(undefined, { // Use 'undefined' for user's locale conventions for date/month order
         year: 'numeric', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZone: 'UTC', // Specify UTC
+        hour12: true // Use 12-hour format (e.g., AM/PM) - adjust as needed
+      }) + ' UTC';
     } catch (e) {
       console.error("Error formatting timestamp in TableViewNotionDatabasePage:", e);
       formattedTimestamp = 'Invalid Date';
@@ -301,6 +305,8 @@ export default TableViewNotionDatabasePage;
 // Force dynamic rendering and prevent caching
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+    
+
     
 
     
