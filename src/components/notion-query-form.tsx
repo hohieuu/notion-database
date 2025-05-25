@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Terminal, ClipboardCopy, Eye, Table2 as TableIcon, ExternalLink, HelpCircle } from 'lucide-react'; // Added HelpCircle
+import { Loader2, Terminal, ClipboardCopy, Eye, Table2 as TableIcon, ExternalLink, HelpCircle } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
@@ -336,7 +336,7 @@ export const NotionQueryForm: FC = () => {
       <CardHeader className="bg-muted/50 p-6">
         <div className="flex justify-between items-center">
             <CardTitle className="text-2xl font-semibold text-primary">Query Configuration</CardTitle>
-            <Button variant="outline" size="sm" onClick={loadExampleData} className="flex items-center gap-1.5">
+            <Button variant="secondary" size="sm" onClick={loadExampleData} className="flex items-center gap-1.5">
                 <HelpCircle size={16} />
                 Load Example Data
             </Button>
@@ -504,6 +504,3 @@ export const NotionQueryForm: FC = () => {
     </Card>
   );
 };
-
-
-    
