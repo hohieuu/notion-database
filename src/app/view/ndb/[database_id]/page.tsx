@@ -1,14 +1,43 @@
 
-import type { NextPage } from 'next';
+import type { NextPage, Metadata } from 'next';
 import { executeNotionQuery } from '@/app/actions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-// ScrollArea import removed as it's no longer used
 
 interface ViewNotionDatabasePageProps {
   params: { database_id: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }
+
+// generateMetadata function to dynamically set page title and meta tags
+export async function generateMetadata({ params, searchParams }: ViewNotionDatabasePageProps): Promise<Metadata> {
+  const databaseId = params.database_id;
+  const apiKey = searchParams?.sak as string | undefined;
+  const filterJson = searchParams?.filter as string | undefined;
+
+  let pageTitle = `Notion DB: ${databaseId}`;
+
+  if (databaseId && apiKey) {
+    // We can optionally fetch minimal data or check error state to refine title
+    // For now, we'll keep it simple. If there's an error, the component will display it.
+    // The title can reflect a potential error state if we re-run a lightweight check or
+    // if executeNotionQuery was structured to return a preliminary status quickly.
+    // However, for this fix, we primarily focus on removing the hydration error.
+    // The actual query result for content is handled in the page component.
+  } else if (!databaseId || !apiKey) {
+    pageTitle = `Error Querying Database`;
+  }
+
+
+  return {
+    title: pageTitle,
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
+}
+
 
 const ViewNotionDatabasePage: NextPage<ViewNotionDatabasePageProps> = async ({ params, searchParams }) => {
   const databaseId = params.database_id;
@@ -17,7 +46,7 @@ const ViewNotionDatabasePage: NextPage<ViewNotionDatabasePageProps> = async ({ p
 
   if (!databaseId) {
     return (
-      <div className="min-h-screen bg-white p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-white font-sans p-8 flex items-center justify-center">
         <Alert variant="destructive" className="w-full max-w-xl">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>Database ID is missing in the path.</AlertDescription>
@@ -28,7 +57,7 @@ const ViewNotionDatabasePage: NextPage<ViewNotionDatabasePageProps> = async ({ p
 
   if (!apiKey) {
     return (
-      <div className="min-h-screen bg-white p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-white font-sans p-8 flex items-center justify-center">
         <Alert variant="destructive" className="w-full max-w-xl">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>API Key (sak) is missing in query parameters.</AlertDescription>
@@ -44,10 +73,10 @@ const ViewNotionDatabasePage: NextPage<ViewNotionDatabasePageProps> = async ({ p
   });
 
   let content;
-  let pageTitle = `Notion DB: ${databaseId}`;
+  let cardTitleText = `Notion DB: ${databaseId}`; // Title for the card
 
   if (result.error) {
-    pageTitle = `Error Querying: ${databaseId}`;
+    cardTitleText = `Error Querying: ${databaseId}`;
     content = (
       <Alert variant="destructive">
         <AlertTitle>Query Error</AlertTitle>
@@ -68,27 +97,19 @@ const ViewNotionDatabasePage: NextPage<ViewNotionDatabasePageProps> = async ({ p
   }
 
   return (
-    <html lang="en">
-      <head>
-        <title>{pageTitle}</title>
-        <meta name="robots" content="noindex, nofollow" /> 
-      </head>
-      <body className="bg-white font-sans">
-        <div className="min-h-screen p-4 md:p-8">
-          <Card className="w-full max-w-4xl mx-auto shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl text-primary">{pageTitle}</CardTitle>
-              <CardDescription>
-                {result.error ? "Details of the error encountered." : "Raw JSON response from the Notion API query."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {content}
-            </CardContent>
-          </Card>
-        </div>
-      </body>
-    </html>
+    <div className="min-h-screen bg-white font-sans p-4 md:p-8"> {/* Applied bg-white and font-sans here */}
+      <Card className="w-full max-w-4xl mx-auto shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl text-primary">{cardTitleText}</CardTitle>
+          <CardDescription>
+            {result.error ? "Details of the error encountered." : "Raw JSON response from the Notion API query."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {content}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
