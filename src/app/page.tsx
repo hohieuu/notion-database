@@ -2,7 +2,7 @@
 import { NotionQueryForm } from '@/components/notion-query-form';
 import { Toaster } from "@/components/ui/toaster";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ExternalLink, ShieldCheck } from 'lucide-react';
+import { ExternalLink, ShieldCheck, Wand2 } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -106,6 +106,24 @@ export default function Home() {
                     Notion API Filter Documentation <ExternalLink size={14}/>
                   </a>
                 </p>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4">
+              <AccordionTrigger className="text-lg hover:text-primary flex items-center gap-2">
+                <Wand2 size={20} className="text-primary/80" />
+                4. Future Idea: Chat with Your Notion Database using AI
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground space-y-3 pt-3">
+                <p>Imagine being able to ask questions about your Notion database in plain English, just like talking to a helpful assistant! This is a potential future feature we're excited about.</p>
+                <p>How it could work:</p>
+                <ul className="list-disc list-inside space-y-1 pl-4">
+                  <li>You'd type your request in a chat window (e.g., "Show me all tasks due this week").</li>
+                  <li>An AI (powered by technology like Genkit) would understand your question.</li>
+                  <li>The AI would then intelligently query your Notion database to find the information, translating your natural language into the necessary filters.</li>
+                  <li>Finally, the AI would give you the answer in a clear, easy-to-understand way, right in the chat.</li>
+                </ul>
+                <p>This would mean no more manually crafting JSON filters for many common queries – just ask, and the AI could handle the rest. Stay tuned for potential developments in this area!</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
